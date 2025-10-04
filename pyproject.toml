@@ -28,12 +28,19 @@ name = "price-prediction-ml"
 version = "0.1.0"
 description = "Bitcoin price prediction using ML and news sentiment analysis"
 authors = [
-    {name = "Lanskask",email = "grey.wooden.tractor@gmail.com"},
-    {name = "Danila",email = "petrovdanich@gmail.com"},
+    "Lanskask <grey.wooden.tractor@gmail.com>",
+    "Danila <petrovdanich@gmail.com>",
 ]
 packages = [
     { include = "crypto_webscrapper" }
 ]
+
+[tool.poetry.scripts]
+download-news = "crypto_webscrapper.download_bitcoin_news:combine_and_save_datasets"
+scrape-recent = "crypto_webscrapper.scrape_recent_news:scrape_all_sources"
+create-dataset = "crypto_webscrapper.create_final_dataset:main"
+add-prices = "crypto_webscrapper.add_price_data:main"
+verify-dataset = "crypto_webscrapper.verify_dataset:main"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

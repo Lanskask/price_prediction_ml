@@ -31,35 +31,52 @@ poetry install
 poetry install --extras kaggle
 ```
 
+To use the existing Python environment at `~/Programming/Python/.venv`:
+```bash
+poetry env use ~/Programming/Python/.venv/bin/python
+poetry install
+```
+
 ## Usage
+
+The project provides convenient CLI commands via Poetry:
 
 ### 1. Download historical Bitcoin news from Kaggle
 
 ```bash
-python crypto_webscrapper/download_bitcoin_news.py
+poetry run download-news
 ```
 
 ### 2. Scrape recent Bitcoin news
 
 ```bash
-python crypto_webscrapper/scrape_recent_news.py
+poetry run scrape-recent
 ```
 
 ### 3. Create final combined dataset
 
 ```bash
-python crypto_webscrapper/create_final_dataset.py
+poetry run create-dataset
 ```
 
 ### 4. Add Bitcoin price data
 
 ```bash
-python crypto_webscrapper/add_price_data.py
+poetry run add-prices
 ```
 
 ### 5. Verify the dataset
 
 ```bash
+poetry run verify-dataset
+```
+
+Alternatively, run Python scripts directly:
+```bash
+python crypto_webscrapper/download_bitcoin_news.py
+python crypto_webscrapper/scrape_recent_news.py
+python crypto_webscrapper/create_final_dataset.py
+python crypto_webscrapper/add_price_data.py
 python crypto_webscrapper/verify_dataset.py
 ```
 
