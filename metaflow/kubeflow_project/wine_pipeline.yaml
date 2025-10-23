@@ -1,0 +1,235 @@
+# PIPELINE DEFINITION
+# Name: wine-quality-prediction-pipeline
+# Description: A pipeline that trains and evaluates a model to predict wine quality.
+# Inputs:
+#    data_url: str [Default: 'http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv']
+components:
+  comp-evaluate-model-op:
+    executorLabel: exec-evaluate-model-op
+    inputDefinitions:
+      artifacts:
+        model_path:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+        test_data_path:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+    outputDefinitions:
+      artifacts:
+        metrics_path:
+          artifactType:
+            schemaTitle: system.Metrics
+            schemaVersion: 0.0.1
+  comp-load-data-op:
+    executorLabel: exec-load-data-op
+    inputDefinitions:
+      parameters:
+        url:
+          parameterType: STRING
+    outputDefinitions:
+      artifacts:
+        dataset_path:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-train-model-op:
+    executorLabel: exec-train-model-op
+    inputDefinitions:
+      artifacts:
+        dataset_path:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+    outputDefinitions:
+      artifacts:
+        model_path:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+        test_data_path:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+deploymentSpec:
+  executors:
+    exec-evaluate-model-op:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - evaluate_model_op
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'pandas==1.3.5'\
+          \ 'scikit-learn==1.0.2' 'joblib==1.1.0' 'numpy==1.21.6'  &&  python3 -m\
+          \ pip install --quiet --no-warn-script-location 'kfp==2.14.6' '--no-deps'\
+          \ 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"$0\" \"$@\"\
+          \n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef evaluate_model_op(\n    model_path: dsl.Input[dsl.Model],\n \
+          \   test_data_path: dsl.Input[dsl.Dataset],\n    metrics_path: dsl.Output[dsl.Metrics],\n\
+          ):\n    \"\"\"Evaluates the model and saves the RMSE metric.\"\"\"\n   \
+          \ import pandas as pd\n    import numpy as np\n    from sklearn.metrics\
+          \ import mean_squared_error\n    import joblib\n    import json\n\n    print(\"\
+          Loading model and test data for evaluation...\")\n    model = joblib.load(model_path.path)\n\
+          \    test_df = pd.read_csv(test_data_path.path)\n\n    X_test = test_df.drop('quality',\
+          \ axis=1)\n    y_test = test_df['quality']\n\n    print(\"Evaluating model...\"\
+          )\n    predictions = model.predict(X_test)\n    rmse = np.sqrt(mean_squared_error(y_test,\
+          \ predictions))\n\n    print(f\"Root Mean Squared Error: {rmse:.4f}\")\n\
+          \n    # Save metrics as a JSON file for Kubeflow UI\n    metrics = {\n \
+          \       'metrics': [{\n            'name': 'rmse',\n            'numberValue':\
+          \ rmse,\n            'format': \"RAW\",\n        }]\n    }\n    with open(metrics_path.path,\
+          \ 'w') as f:\n        json.dump(metrics, f)\n    print(f\"Metrics saved\
+          \ to {metrics_path.path}\")\n\n"
+        image: python:3.9
+    exec-load-data-op:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - load_data_op
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'pandas==1.3.5'\
+          \  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.14.6'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef load_data_op(\n    url: str,\n    dataset_path: dsl.Output[dsl.Dataset],\n\
+          ):\n    \"\"\"Loads the wine quality dataset from a URL.\"\"\"\n    import\
+          \ pandas as pd\n\n    print(f\"Loading data from {url}...\")\n    df = pd.read_csv(url,\
+          \ sep=';')\n    df.to_csv(dataset_path.path, index=False)\n    print(f\"\
+          Data saved to {dataset_path.path}\")\n\n"
+        image: python:3.9
+    exec-train-model-op:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - train_model_op
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'pandas==1.3.5'\
+          \ 'scikit-learn==1.0.2' 'joblib==1.1.0'  &&  python3 -m pip install --quiet\
+          \ --no-warn-script-location 'kfp==2.14.6' '--no-deps' 'typing-extensions>=3.7.4,<5;\
+          \ python_version<\"3.9\"' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef train_model_op(\n    dataset_path: dsl.Input[dsl.Dataset],\n\
+          \    model_path: dsl.Output[dsl.Model],\n    test_data_path: dsl.Output[dsl.Dataset],\n\
+          ):\n    \"\"\"Trains a RandomForestRegressor and saves the model.\"\"\"\n\
+          \    import pandas as pd\n    from sklearn.model_selection import train_test_split\n\
+          \    from sklearn.ensemble import RandomForestRegressor\n    import joblib\n\
+          \n    print(\"Loading data for training...\")\n    df = pd.read_csv(dataset_path.path)\n\
+          \    X = df.drop('quality', axis=1)\n    y = df['quality']\n\n    X_train,\
+          \ X_test, y_train, y_test = train_test_split(\n        X, y, test_size=0.2,\
+          \ random_state=42\n    )\n\n    print(\"Training model...\")\n    model\
+          \ = RandomForestRegressor(n_estimators=100, random_state=42)\n    model.fit(X_train,\
+          \ y_train)\n    joblib.dump(model, model_path.path)\n    print(f\"Model\
+          \ saved to {model_path.path}\")\n\n    # Save test data for evaluation\n\
+          \    test_df = pd.concat([X_test, y_test], axis=1)\n    test_df.to_csv(test_data_path.path,\
+          \ index=False)\n    print(f\"Test data saved to {test_data_path.path}\"\
+          )\n\n"
+        image: python:3.9
+pipelineInfo:
+  description: A pipeline that trains and evaluates a model to predict wine quality.
+  name: wine-quality-prediction-pipeline
+root:
+  dag:
+    tasks:
+      evaluate-model-op:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-evaluate-model-op
+        dependentTasks:
+        - train-model-op
+        inputs:
+          artifacts:
+            model_path:
+              taskOutputArtifact:
+                outputArtifactKey: model_path
+                producerTask: train-model-op
+            test_data_path:
+              taskOutputArtifact:
+                outputArtifactKey: test_data_path
+                producerTask: train-model-op
+        taskInfo:
+          name: evaluate-model-op
+      load-data-op:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-load-data-op
+        inputs:
+          parameters:
+            url:
+              componentInputParameter: data_url
+        taskInfo:
+          name: load-data-op
+      train-model-op:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-train-model-op
+        dependentTasks:
+        - load-data-op
+        inputs:
+          artifacts:
+            dataset_path:
+              taskOutputArtifact:
+                outputArtifactKey: dataset_path
+                producerTask: load-data-op
+        taskInfo:
+          name: train-model-op
+  inputDefinitions:
+    parameters:
+      data_url:
+        defaultValue: http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv
+        isOptional: true
+        parameterType: STRING
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.14.6

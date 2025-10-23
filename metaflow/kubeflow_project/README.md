@@ -13,11 +13,11 @@ poetry install
 ## Commands
 
 - **Run the Metaflow flow:**
-  ```bash
-  poetry run python flow.py run
-  ```
+```bash
+poetry run python wine_pipeline.py run
+```
 
 - **Deploy to Kubeflow:**
-  ```bash
-  poetry run python flow.py kubeflow run
-  ```
+```bash
+poetry run python wine_pipeline.py kubeflow run
+```

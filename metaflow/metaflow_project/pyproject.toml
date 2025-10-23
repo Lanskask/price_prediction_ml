@@ -3,11 +3,15 @@ name = "metaflow-project"
 version = "0.1.0"
 description = "A project to demonstrate Metaflow features."
 authors = ["Gemini <gemini@google.com>"]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.9"
 metaflow = "*"
 pandas = "*"
+scikit-learn = "*"
+numpy = "*"
+joblib = "*"
 
 [poetry.group.dev.dependencies]
 pytest = "^5.2"

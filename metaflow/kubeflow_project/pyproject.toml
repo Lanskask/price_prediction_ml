@@ -3,14 +3,19 @@ name = "kubeflow-project"
 version = "0.1.0"
 description = "A project to demonstrate Kubeflow pipelines with Metaflow."
 authors = ["Gemini <gemini@google.com>"]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.9"
-metaflow = "*"
+kfp = "*"
 pandas = "*"
+scikit-learn = "*"
+numpy = "*"
+joblib = "*"
 
 [poetry.group.dev.dependencies]
 pytest = "^5.2"
+pylint = "*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
