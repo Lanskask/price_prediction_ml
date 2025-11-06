@@ -73,10 +73,10 @@ class WineQualityFlow(FlowSpec):
             
             # Store basic statistics for monitoring
             self.data_stats = {
-                'n_samples': len(self.df),
-                'n_features': len(self.df.columns) - 1,  # Excluding target
-                'quality_range': (self.df['quality'].min(), self.df['quality'].max()),
-                'missing_values': self.df.isnull().sum().sum()
+                'n_samples': int(len(self.df)),
+                'n_features': int(len(self.df.columns) - 1),  # Excluding target
+                'quality_range': (int(self.df['quality'].min()), int(self.df['quality'].max())),
+                'missing_values': int(self.df.isnull().sum().sum())
             }
             
             print(f"📊 Data Statistics:")
@@ -137,12 +137,12 @@ class WineQualityFlow(FlowSpec):
             
             # Store training metadata
             self.training_metadata = {
-                'n_estimators': self.n_estimators,
-                'test_size': self.test_size,
-                'random_state': self.random_state,
-                'training_samples': len(X_train),
-                'test_samples': len(X_test),
-                'feature_importance': dict(zip(self.X.columns, self.model.feature_importances_))
+                'n_estimators': int(self.n_estimators),
+                'test_size': float(self.test_size),
+                'random_state': int(self.random_state),
+                'training_samples': int(len(X_train)),
+                'test_samples': int(len(X_test)),
+                'feature_importance': {col: float(imp) for col, imp in zip(self.X.columns, self.model.feature_importances_)}
             }
             
             print("✅ Model training complete")
