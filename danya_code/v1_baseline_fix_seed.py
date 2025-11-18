@@ -1,7 +1,4 @@
-# ФИНАЛЬНЫЙ ИСПРАВЛЕННЫЙ BASELINE - ВЕРСИЯ 5 ULTIMATE
-# Все ошибки исправлены: разделение, rolling окна, fillna, metrics
-# Автор: AI Expert в DataScience & Cryptocurrency Prediction
-
+"""Script for Bitcoin Price Prediction with Reproducible Results"""
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import TimeSeriesSplit
@@ -13,6 +10,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import warnings
 warnings.filterwarnings('ignore')
+
+SEED = 42
 
 # ============================================================================
 # ШАГ 1: ЗАГРУЗКА ДАННЫХ
@@ -245,15 +244,15 @@ def train_models(df_train, df_test):
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
     
-    # Модели
+    # Модели с SEED для воспроизводимости
     models = {
-        'Ridge': Ridge(alpha=1.0),
-        'Lasso': Lasso(alpha=0.1, max_iter=5000),
-        'Decision Tree': DecisionTreeRegressor(max_depth=8, random_state=42),
+        'Ridge': Ridge(alpha=1.0, random_state=SEED),
+        'Lasso': Lasso(alpha=0.1, max_iter=5000, random_state=SEED),
+        'Decision Tree': DecisionTreeRegressor(max_depth=8, random_state=SEED),
         'Random Forest': RandomForestRegressor(n_estimators=100, max_depth=8, 
-                                              random_state=42, n_jobs=-1),
+                                              random_state=SEED, n_jobs=-1),
         'LightGBM': LGBMRegressor(n_estimators=200, max_depth=6, learning_rate=0.05,
-                                 num_leaves=32, random_state=42, verbose=-1)
+                                 num_leaves=32, random_state=SEED, verbose=-1)
     }
     
     results = {}
@@ -356,21 +355,7 @@ def print_results(results):
 
 def main():
     """Главная функция"""
-    print("\n" + "█"*90)
-    print("█" + " "*88 + "█")
-    print("█" + "🚀 BITCOIN PRICE PREDICTION - ФИНАЛЬНЫЙ BASELINE V5 ULTIMATE".center(88) + "█")
-    print("█" + " "*88 + "█")
-    print("█"*90)
-    
-    print("\n✅ ВСЕ ОШИБКИ ИСПРАВЛЕНЫ:")
-    print("  ✅ Разделение на train/test ПО ИНДЕКСАМ (не датам)")
-    print("  ✅ Разделение ПЕРЕД feature engineering")
-    print("  ✅ Rolling окна ОТДЕЛЬНО для train и test")
-    print("  ✅ Fillna ОТДЕЛЬНО для train и test (нет утечки медианы)")
-    print("  ✅ StandardScaler fit только на train")
-    print("  ✅ MAPE не используется (защита от делений на 0)")
-    print("  ✅ R² с защитой от NaN")
-    print("  ✅ Test set не пустой (% разделение)")
+    print(f"\n🔧 SEED для воспроизводимости: {SEED}")
     print("\n")
     
     try:
