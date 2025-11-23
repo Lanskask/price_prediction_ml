@@ -1,2 +1,8 @@
 .claude/
+
+*.joblib
 .metaflow/
+metaflow/metaflow_project/*.json
+
+tensorflow_exprs/logs/
+tensorflow_exprs/.logdir/
